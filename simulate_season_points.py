@@ -1,3 +1,11 @@
+"""
+http://www.sportshacker.net/posts/season_points_simulation.html
+"""
+
+"""
+script to simulate finishing position probabilities given season points data from Sporting Index
+"""
+
 import lxml.html, json, re, urllib
 
 LivePricingUrl="http://livepricing.sportingindex.com/LivePricing.svc/jsonp/GetLivePricesByMeeting?meetingKey="
