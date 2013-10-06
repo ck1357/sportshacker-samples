@@ -142,4 +142,12 @@ def login(username, password, http):
     resp=http.fetch(APIEndpoints[endpoint], action, req)
     return handle_response(resp)
 
-print login("woltrading", "zdrazvu1tye", BetfairAPITransport())
+if __name__=="__main__":
+    try:
+        import sys
+        if len(sys.argv) < 3:
+            raise RuntimeError("Please enter username, password")
+        username, password = sys.argv[1], sys.argv[2]
+        print login(username, password, BetfairAPITransport())
+    except RuntimeError, error:
+        print "Error: %s" % str(error)
