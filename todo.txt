@@ -1,6 +1,5 @@
 < short >
 
 oddschecker > get_football_matches
-dixon coles
 
 wsdl generator
