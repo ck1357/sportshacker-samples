@@ -1,7 +1,3 @@
-"""
-script to crawl Stan James event tree
-"""
-
 from lxml import etree
 
 import urllib

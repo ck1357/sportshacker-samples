@@ -1,26 +1,4 @@
-"""
-http://www.sportshacker.net/posts/season_points_simulation.html
-"""
-
-"""
-script to simulate finishing position probabilities given season points data from Sporting Index
-"""
-
 import lxml.html, json, re, urllib
-
-LivePricingUrl="http://livepricing.sportingindex.com/LivePricing.svc/jsonp/GetLivePricesByMeeting?meetingKey="
-
-def get_market_quotes(url):        
-    doc=lxml.html.fromstring(urllib.urlopen(url).read())
-    ids=dict([(li.attrib["key"], re.sub(" Points$", "", li.xpath("span[@class='markets']")[0].text))
-              for li in doc.xpath("//ul[@class='prices']/li")
-              if "key" in li.attrib])
-    quotes=json.loads(urllib.urlopen(LivePricingUrl+url.split("/")[-2]).read())
-    return [{"name": ids[quote["Key"]],
-             "so_far": tuple([int(tok) for tok in quote["SoFar"].split("/")]),
-             "bid": quote["Sell"],
-             "offer": quote["Buy"]}
-            for quote in quotes["Markets"]]
 
 def simulate_points(quotes, paths, draw_prob=0.3):
     import random
@@ -67,4 +45,9 @@ def generate_position_probabilities(url, paths):
     return calc_position_probabilities(simpoints, paths)
 
 if __name__=="__main__":
-    print generate_position_probabilities("http://www.sportingindex.com/spread-betting/football-domestic/premier-league/mm4.uk.meeting.4191659/premier-league-points-2013-2014", 10000)
+    import feeds.sporting_index as spindex
+    prices=spindex.get_prices("http://www.sportingindex.com/spread-betting/football-domestic/premier-league/mm4.uk.meeting.4191659/premier-league-points-2013-2014")
+    paths=10000
+    simpoints=simulate_points(prices, paths)
+    print calc_position_probabilities(simpoints, paths)
+

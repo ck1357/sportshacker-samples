@@ -1,7 +1,3 @@
-"""
-script to test Betfair API without using dedicated SOAP library
-"""
-
 import xml.dom.minidom as xml
 
 XML=xml.Document()

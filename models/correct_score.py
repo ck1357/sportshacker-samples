@@ -1,7 +1,3 @@
-"""
-script to solve for match odds prices assuming 2d Poisson distribution
-"""
-
 import math, random
 
 def poisson(m, n):
