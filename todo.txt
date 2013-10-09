@@ -1,6 +1,6 @@
 < short >
 
-football_data scraper
+football_data feed
 
 < thoughts >
 
