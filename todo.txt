@@ -1,6 +1,5 @@
 < short >
 
-oddschecker > get_football_matches
 football_data scraper
 
 < thoughts >
