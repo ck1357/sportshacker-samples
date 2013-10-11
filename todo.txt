@@ -1,6 +1,6 @@
 < short >
 
-complete erlang parallel http example
+erlang pmap example should return results in random order
 
 < thoughts >
 
