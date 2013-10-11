@@ -1,3 +1,4 @@
+%% Joe Armstrong > Programming Erlang > p368
 %% erlc parallel_http.erl
 %% erl -noshell -s parallel_http start -s init stop
 
@@ -6,18 +7,20 @@
 
 pmap(F, L) ->
     S = self(),
-    Pids = lists:map(fun(I) -> spawn(fun() -> pmap_f(S, F, I) end) end, L),
-    pmap_gather(Pids).
+    lists:map(fun(I) -> 
+		      spawn(fun() -> pmap_f(S, F, I) end) 
+	      end, L),
+    pmap_gather(length(L) ,[]).
 
 pmap_f(Parent, F, I) ->
     Parent ! {self(), (catch F(I))}.
 
-pmap_gather([H|T]) ->
+pmap_gather(0, L) ->
+    L;
+pmap_gather(N, L) ->
     receive
-        {H, Ret} -> [Ret|pmap_gather(T)]		    
-    end;
-pmap_gather([]) ->
-    [].
+        {_Pid, Ret} -> pmap_gather(N-1, [Ret|L])
+    end.
 
 start() ->
     application:start(inets),
