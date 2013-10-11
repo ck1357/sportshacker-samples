@@ -1,7 +1,8 @@
 < short >
 
-football_data feed
+complete erlang parallel http example
 
 < thoughts >
 
+football_data feed ?
 wsdl generator ?
