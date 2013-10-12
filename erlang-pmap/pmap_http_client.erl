@@ -16,7 +16,7 @@ pmap_f(Parent, F, I) ->
     Parent ! {self(), (catch F(I))}.
 
 pmap_gather(0, L) ->
-    L;
+    lists:reverse(L);
 pmap_gather(N, L) ->
     receive
         {_Pid, Ret} -> pmap_gather(N-1, [Ret|L])
