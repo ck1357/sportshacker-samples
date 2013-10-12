@@ -1,8 +1,8 @@
 %% Joe Armstrong > Programming Erlang > p368
-%% erlc parallel_http.erl
-%% erl -noshell -s parallel_http start -s init stop
+%% erlc pmap_http_client.erl
+%% erl -noshell -s pmap_http_client start -s init stop
 
--module(parallel_http).
+-module(pmap_http_client).
 -export([start/0]).
 
 pmap(F, L) ->
