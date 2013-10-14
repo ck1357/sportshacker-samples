@@ -5,17 +5,18 @@
 -module(map_http_client).
 -export([start/0]).
 
+-define(SAMPLE_URLS, ["http://www.bbc.co.uk/news/",
+		      "http://observer.theguardian.com/",
+		      "http://www.dailymail.co.uk/home/index.html",
+		      "http://www.thesun.co.uk/sol/homepage/",
+		      "http://www.mirror.co.uk/",
+		      "http://www.independent.co.uk/",
+		      "http://www.express.co.uk/"]).
+
 start() ->
     application:start(inets),
     GetHttp=fun(Url) -> {ok, {_, _, Body}} = httpc:request(get, {Url, []}, [], []), {Url, length(Body)} end,   
-    SampleUrls=["http://www.bbc.co.uk/news/",
-		"http://observer.theguardian.com/",
-		"http://www.dailymail.co.uk/home/index.html",
-		"http://www.thesun.co.uk/sol/homepage/",
-		"http://www.mirror.co.uk/",
-		"http://www.independent.co.uk/",
-		"http://www.express.co.uk/"],
-    io:format("~p~n", [lists:map(GetHttp, SampleUrls)]).
+    io:format("~p~n", [lists:map(GetHttp, ?SAMPLE_URLS)]).
 
 
 

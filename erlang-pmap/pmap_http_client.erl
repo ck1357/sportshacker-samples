@@ -13,26 +13,30 @@ pmap(F, L) ->
     pmap_gather(length(L) ,[]).
 
 pmap_f(Parent, F, I) ->
+    S=self(),
+    io:format("Fetching ~p (Pid ~p)~n", [I, S]),
     Parent ! {self(), (catch F(I))}.
 
 pmap_gather(0, L) ->
     lists:reverse(L);
 pmap_gather(N, L) ->
     receive
-        {_Pid, Ret} -> pmap_gather(N-1, [Ret|L])
+        {Pid, Ret} -> 
+	    io:format("Received ~p (pid ~p)~n", [Ret, Pid]),
+	    pmap_gather(N-1, [Ret|L])
     end.
+
+-define(SAMPLE_URLS, ["http://www.bbc.co.uk/news/",
+		      "http://www.foxnews.com/",
+		      "http://aljazeera.com/",
+		      "http://www.cnn.com/",
+		      "http://www.cnbc.com/",
+		      "http://www.bloomberg.com/"]).
 
 start() ->
     application:start(inets),
     GetHttp=fun(Url) -> {ok, {_, _, Body}} = httpc:request(get, {Url, []}, [], []), {Url, length(Body)} end,   
-    SampleUrls=["http://www.bbc.co.uk/news/",
-		"http://observer.theguardian.com/",
-		"http://www.dailymail.co.uk/home/index.html",
-		"http://www.thesun.co.uk/sol/homepage/",
-		"http://www.mirror.co.uk/",
-		"http://www.independent.co.uk/",
-		"http://www.express.co.uk/"],
-    io:format("~p~n", [pmap(GetHttp, SampleUrls)]).
+    io:format("~n~p~n", [pmap(GetHttp, ?SAMPLE_URLS)]).
 
 
 
