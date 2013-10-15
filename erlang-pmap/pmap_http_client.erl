@@ -22,7 +22,7 @@ pmap(F, L) ->
 pmap_f(Parent, F, I) ->
     S=self(),
     io:format("Fetching ~p (Pid ~p)~n", [I, S]),
-    Parent ! {self(), (catch F(I))}.
+    Parent ! {S, (catch F(I))}.
 
 pmap_gather(0, L) ->
     lists:reverse(L);
