@@ -5,6 +5,13 @@
 -module(pmap_http_client).
 -export([start/0]).
 
+-define(SAMPLE_URLS, ["http://www.bbc.co.uk/news/",
+		      "http://www.foxnews.com/",
+		      "http://aljazeera.com/",
+		      "http://www.cnn.com/",
+		      "http://www.cnbc.com/",
+		      "http://www.bloomberg.com/"]).
+
 pmap(F, L) ->
     S = self(),
     lists:map(fun(I) -> 
@@ -26,17 +33,13 @@ pmap_gather(N, L) ->
 	    pmap_gather(N-1, [Ret|L])
     end.
 
--define(SAMPLE_URLS, ["http://www.bbc.co.uk/news/",
-		      "http://www.foxnews.com/",
-		      "http://aljazeera.com/",
-		      "http://www.cnn.com/",
-		      "http://www.cnbc.com/",
-		      "http://www.bloomberg.com/"]).
-
 start() ->
     application:start(inets),
-    GetHttp=fun(Url) -> {ok, {_, _, Body}} = httpc:request(get, {Url, []}, [], []), {Url, length(Body)} end,   
-    io:format("~n~p~n", [pmap(GetHttp, ?SAMPLE_URLS)]).
+    GetHttp=fun(Url) -> 
+		    {ok, {_, _, Body}} = httpc:request(get, {Url, []}, [], []), 
+		    {Url, length(Body)} 
+	    end,   
+    io:format("~p~n", [pmap(GetHttp, ?SAMPLE_URLS)]).
 
 
 

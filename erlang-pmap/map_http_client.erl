@@ -6,16 +6,18 @@
 -export([start/0]).
 
 -define(SAMPLE_URLS, ["http://www.bbc.co.uk/news/",
-		      "http://observer.theguardian.com/",
-		      "http://www.dailymail.co.uk/home/index.html",
-		      "http://www.thesun.co.uk/sol/homepage/",
-		      "http://www.mirror.co.uk/",
-		      "http://www.independent.co.uk/",
-		      "http://www.express.co.uk/"]).
+		      "http://www.foxnews.com/",
+		      "http://aljazeera.com/",
+		      "http://www.cnn.com/",
+		      "http://www.cnbc.com/",
+		      "http://www.bloomberg.com/"]).
 
 start() ->
     application:start(inets),
-    GetHttp=fun(Url) -> {ok, {_, _, Body}} = httpc:request(get, {Url, []}, [], []), {Url, length(Body)} end,   
+    GetHttp=fun(Url) -> 
+		    {ok, {_, _, Body}} = httpc:request(get, {Url, []}, [], []), 
+		    {Url, length(Body)} 
+	    end,   
     io:format("~p~n", [lists:map(GetHttp, ?SAMPLE_URLS)]).
 
 
