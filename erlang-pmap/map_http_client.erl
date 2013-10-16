@@ -12,13 +12,14 @@
 		      "http://www.cnbc.com/",
 		      "http://www.bloomberg.com/"]).
 
+fetch_http(Url) -> 
+    {ok, {_, _, Body}} = httpc:request(get, {Url, []}, [], []), 
+    {Url, length(Body)}.
+
 start() ->
     application:start(inets),
-    GetHttp=fun(Url) -> 
-		    {ok, {_, _, Body}} = httpc:request(get, {Url, []}, [], []), 
-		    {Url, length(Body)} 
-	    end,   
-    io:format("~p~n", [lists:map(GetHttp, ?SAMPLE_URLS)]).
+    io:format("~p~n", [lists:map(fun(Url) -> fetch_http(Url) end,
+				 ?SAMPLE_URLS)]).
 
 
 

@@ -33,13 +33,14 @@ pmap_gather(N, L) ->
 	    pmap_gather(N-1, [Ret|L])
     end.
 
+fetch_http(Url) -> 
+    {ok, {_, _, Body}} = httpc:request(get, {Url, []}, [], []), 
+    {Url, length(Body)}.
+
 start() ->
     application:start(inets),
-    GetHttp=fun(Url) -> 
-		    {ok, {_, _, Body}} = httpc:request(get, {Url, []}, [], []), 
-		    {Url, length(Body)} 
-	    end,   
-    io:format("~p~n", [pmap(GetHttp, ?SAMPLE_URLS)]).
+    io:format("~p~n", [pmap(fun(Url) -> fetch_http(Url) end,
+			    ?SAMPLE_URLS)]).
 
 
 
