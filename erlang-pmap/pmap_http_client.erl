@@ -12,6 +12,10 @@
 		      "http://www.cnbc.com/",
 		      "http://www.bloomberg.com/"]).
 
+fetch_http(Url) -> 
+    {ok, {_, _, Body}} = httpc:request(get, {Url, []}, [], []), 
+    {Url, length(Body)}.
+
 pmap(F, L) ->
     S = self(),
     lists:map(fun(I) -> 
@@ -32,10 +36,6 @@ pmap_gather(N, L) ->
 	    io:format("Received ~p (pid ~p)~n", [Ret, Pid]),
 	    pmap_gather(N-1, [Ret|L])
     end.
-
-fetch_http(Url) -> 
-    {ok, {_, _, Body}} = httpc:request(get, {Url, []}, [], []), 
-    {Url, length(Body)}.
 
 start() ->
     application:start(inets),
