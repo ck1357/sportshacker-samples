@@ -1,7 +1,3 @@
-/*
- .. but you can also pass by reference
- */
-
 package main
 
 import "fmt"
@@ -10,8 +6,8 @@ type MyStruct struct {
 	MyInt int
 }
 
-func update(x *MyStruct) {
-	x.MyInt=1 // not *x.MyInt=1
+func update_struct(x *MyStruct) {
+	x.MyInt=1 /* why not  *x.MyInt=1 ? */
 }
 
 func main() {
@@ -19,7 +15,7 @@ func main() {
 	MyInt: 0,
 	}
 	fmt.Printf("Before: %v\n", x)
-	update(&x)
+	update_struct(&x)
 	fmt.Printf("After: %v\n", x)
 }
 
