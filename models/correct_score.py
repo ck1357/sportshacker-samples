@@ -1,4 +1,4 @@
-import math, random
+import math
 
 def poisson(m, n):
     p=math.exp(-m)
@@ -9,11 +9,9 @@ def poisson(m, n):
     return r
 
 def simulate_correct_score(mx, my, n):
-    r=[]
-    px, py = (poisson(mx, n), 
-              poisson(my, n))
-    return [[px[i]*py[j] for j in range(n)]
-            for i in range(n)]
+    import numpy as np
+    return np.outer(poisson(mx, n),
+                    poisson(my, n))
 
 class Grid(list):
 

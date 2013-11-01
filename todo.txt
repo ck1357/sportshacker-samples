@@ -1,8 +1,3 @@
 < short >
 
-erlang pmap example should return results in random order
-
-< thoughts >
-
-football_data feed ?
-wsdl generator ?
+test using scipy solver on match odds ratings
