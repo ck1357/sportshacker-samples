@@ -54,6 +54,13 @@ class Grid(list):
             filterfn=lambda i, j: i+j < strike
         return self.sum(filterfn)
 
+    def asian_handicap(self, homeaway, strike):
+        if homeaway=="home":
+            filterfn=lambda i, j: i-j > strike
+        else:
+            filterfn=lambda i, j: j-i > strike
+        return self.sum(filterfn)
+
 def solve_match_odds(prob, n):
     import numpy as np
     def errfn(m, target, n):
@@ -69,3 +76,5 @@ if __name__=="__main__":
     print grid.match_odds
     print grid.total_goals("over", 2.5)
     print grid.total_goals("under", 2.5)
+    print grid.asian_handicap("home", 1.5)
+    print grid.asian_handicap("away", 1.5)
