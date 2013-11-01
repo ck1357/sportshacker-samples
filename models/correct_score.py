@@ -44,6 +44,16 @@ class Grid(list):
                 self.away_win,
                 self.draw]
 
+    def correct_score(self, i, j):
+        return self[i][j]
+
+    def total_goals(self, overunder, strike):
+        if overunder=="over":
+            filterfn=lambda i, j: i+j > strike
+        else:
+            filterfn=lambda i, j: i+j < strike
+        return self.sum(filterfn)
+
 def solve_match_odds(prob, n):
     import numpy as np
     def errfn(m, target, n):
@@ -57,3 +67,5 @@ if __name__=="__main__":
     r=solve_match_odds(Target, N)
     grid=Grid(simulate_correct_score(r[0], r[1], N))
     print grid.match_odds
+    print grid.total_goals("over", 2.5)
+    print grid.total_goals("under", 2.5)
