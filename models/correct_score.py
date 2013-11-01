@@ -12,38 +12,48 @@ def simulate_correct_score(mx, my, n):
     r=[]
     px, py = (poisson(mx, n), 
               poisson(my, n))
-    for i in range(n):
-        r.append([])
-        for j in range(n):
-            r[i].append(px[i]*py[j])
-    return r
+    return [[px[i]*py[j] for j in range(n)]
+            for i in range(n)]
 
-def simulate_match_odds(mx, my, n):
-    r=[0.0 for i in range(3)]
-    px, py = (poisson(mx, n), 
-              poisson(my, n))
-    for i in range(n):
-        for j in range(n):
-            if i > j:
-                k=0
-            elif i < j:
-                k=1
-            else:
-                k=2
-            r[k]+=px[i]*py[j]
-    return r
+class Grid(list):
 
-def solve_match_odds(p, n):
+    def __init__(self, data):
+        list.__init__(self, data)
+
+    def sum(self, filterfn):
+        return sum([self[i][j]                    
+                    for i in range(len(self))
+                    for j in range(len(self))
+                    if filterfn(i, j)])
+                    
+    @property
+    def home_win(self):
+        return self.sum(lambda i, j: i > j)
+
+    @property
+    def away_win(self):
+        return self.sum(lambda i, j: i < j)
+
+    @property
+    def draw(self):
+        return self.sum(lambda i, j: i==j)
+
+    @property
+    def match_odds(self):
+        return [self.home_win,
+                self.away_win,
+                self.draw]
+
+def solve_match_odds(prob, n):
     import numpy as np
-    def errfn(p, target, n):
-        r=simulate_match_odds(p[0], p[1], n)
-        return np.sum(np.subtract(target, r)**2)    
+    def errfn(m, target, n):
+        grid=Grid(simulate_correct_score(mx=m[0], my=m[1], n=n))
+        return np.sum(np.subtract(grid.match_odds, target)**2)
     from scipy import optimize
-    return optimize.fmin(errfn, (0, 0), args=(p, n))
+    return optimize.fmin(errfn, (1, 1), args=(prob, n))
 
 if __name__=="__main__":
     Target, N = [0.5, 0.2, 0.3], 10    
     r=solve_match_odds(Target, N)
-    print r
-    # print simulate_correct_score(r[0], r[1], N)
-    print simulate_match_odds(r[0], r[1], N)
+    grid=Grid(simulate_correct_score(r[0], r[1], N))
+    print grid.match_odds
