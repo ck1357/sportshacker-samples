@@ -1,54 +1,55 @@
-import numpy as np
-
-from scipy import optimize
-
 import math, random
 
 HomeAwayBias=1.3
 DrawMax=0.3
-DrawCurvature=0.7
+DrawCurvature=0.75
 
-def simulate_match(fixture, abilities):
-    homeability=abilities[fixture["home_team"]]*HomeAwayBias
-    awayability=abilities[fixture["away_team"]]/HomeAwayBias
+def simulate_match(fixture, expabilities):
+    homeability=expabilities[fixture["home_team"]]*HomeAwayBias
+    awayability=expabilities[fixture["away_team"]]/HomeAwayBias
     ratio=homeability/float(homeability+awayability)
     drawprob=DrawMax-DrawCurvature*(ratio-0.5)**2
     return [ratio*(1-drawprob),
             (1-ratio)*(1-drawprob),
             drawprob]
 
-def calc_error(avals, teamnames, trainingset):
-    abilities=dict([(name, math.exp(aval))
-                    for name, aval in zip(teamnames, avals)])
+def calc_error(trainingset, abilities):
+    expabilities=dict([(key, math.exp(value))
+                       for key, value in abilities.items()])
     errors=[sum([(x-y)**2 
-                 for x, y in zip(simulate_match(fixture=fixture,
-                                                abilities=abilities), 
+                 for x, y in zip(simulate_match(fixture, 
+                                                expabilities), 
                                  fixture["probabilities"])])/float(3)
             for fixture in trainingset]
     return (sum(errors)/float(len(trainingset)))**0.5
 
 """
-how do you supress warnings ?
-is maxiter working correctly ?
-try optimising draw parameters as well ?
-calc ratings as output
-can you remove math.exp ? why on earth does it work so well at guess 50 ?
+this solver is probably very inefficient; however it does have the merits of keeping the abilities in sensible bounds
 """
 
-"""
-this is giving totally fucked up results; add back solve_inefficiently
-"""
-
-def solve_scipy(teams, trainingset, guess=50):
-    teamnames=sorted([team["name"] for team in teams])
-    guesses=tuple([guess for i in range(len(teams))])
-    resp=optimize.fmin(calc_error, guesses,
-                       args=(teamnames, trainingset),
-                       full_output=1)
-    best, err, n, funcalls, warnflag = resp
-    abilities=dict([(name, aval)
-                    for name, aval in zip(teamnames, list(best))])
-    return (abilities, n, err)
+def solve_inefficiently(teams, trainingset, generations=1000, decay=2):
+    abilities=dict([(team["name"], random.gauss(0, 1))
+                    for team in teams])
+    best=calc_error(trainingset, abilities)
+    for i in range(generations):
+        factor=((generations-i)/float(generations))**decay
+        teamname=teams[i%len(teams)]["name"]
+        delta=random.gauss(0, 1)*factor
+        abilities[teamname]+=delta
+        # up
+        err=calc_error(trainingset, abilities)
+        if err < best:
+            best=err
+            continue
+        # down
+        abilities[teamname]-=2*delta
+        err=calc_error(trainingset, abilities)
+        if err < best:
+            best=err 
+            continue
+        # reset
+        abilities[teamname]+=delta
+    return (abilities, best)
 
 import json
 
@@ -58,12 +59,11 @@ if __name__=="__main__":
     teams=sorted([{"name": team["Name"]}
                   for team in SampleRequest["Teams"]],
                  key=lambda x: x["name"])           
-    trainingset=[{"date": fixture["Date"],
-                  "home_team": fixture["HomeTeam"],
+    trainingset=[{"home_team": fixture["HomeTeam"],
                   "away_team": fixture["AwayTeam"],
                   "probabilities": fixture["Probabilities"]}
-                 for fixture in SampleRequest["TrainingFixtures"]]    
-    abilities, n, err = solve_scipy(teams, trainingset)
+                 for fixture in SampleRequest["TrainingFixtures"]]
+    abilities, err = solve_inefficiently(teams, trainingset)
     def format_name(text, n=16):
         if len(text) < n:
             return text+" ".join(["" for i in range(n-len(text))])
@@ -71,9 +71,9 @@ if __name__=="__main__":
             return text[:n]
     print
     for key, value in sorted([(key, value) 
-                              for key, value in abilities.items()],                             key=lambda x: -x[-1]):
+                              for key, value in abilities.items()],
+                             key=lambda x: -x[-1]):
         print "%s %.5f" % (format_name(key), value)
-    print 
-    print "Iterations: %i" % n
+    print
     print "Error: %.5f" % err
 
