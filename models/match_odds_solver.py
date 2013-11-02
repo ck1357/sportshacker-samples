@@ -18,7 +18,7 @@ def simulate_match(fixture, abilities):
             drawprob]
 
 def calc_error(avals, teamnames, trainingset):
-    abilities=dict([(name, aval)
+    abilities=dict([(name, math.exp(aval))
                     for name, aval in zip(teamnames, avals)])
     errors=[sum([(x-y)**2 
                  for x, y in zip(simulate_match(fixture=fixture,
@@ -30,12 +30,16 @@ def calc_error(avals, teamnames, trainingset):
 """
 how do you supress warnings ?
 is maxiter working correctly ?
-should you bring err function inline ?
-how about calculating the ratings as output ?
 try optimising draw parameters as well ?
+calc ratings as output
+can you remove math.exp ? why on earth does it work so well at guess 50 ?
 """
 
-def solve_scipy(teams, trainingset, guess=10):
+"""
+this is giving totally fucked up results; add back solve_inefficiently
+"""
+
+def solve_scipy(teams, trainingset, guess=50):
     teamnames=sorted([team["name"] for team in teams])
     guesses=tuple([guess for i in range(len(teams))])
     resp=optimize.fmin(calc_error, guesses,
@@ -72,3 +76,4 @@ if __name__=="__main__":
     print 
     print "Iterations: %i" % n
     print "Error: %.5f" % err
+
