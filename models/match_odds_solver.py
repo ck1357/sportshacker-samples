@@ -1,62 +1,23 @@
-import math, random, yaml
+import math, random
 
-DefaultFactors=yaml.load("""
-draw_max: 
-  base: 0.3
-  sigma: 0.01
-draw_curvature: 
-  base: 0.7
-  sigma: 0.01
-home_away_bias: 
-  base: 1.3
-  sigma: 0.01
-""")
+HomeAwayBias=1.3
+DrawMax=0.3
+DrawCurvature=0.7
 
-def simulate_match(fixture, expabilities, factors):
-    ha_bias=float(factors["home_away_bias"])
-    homeability=expabilities[fixture["home_team"]]*ha_bias
-    awayability=expabilities[fixture["away_team"]]/ha_bias
+def simulate_match(fixture, expabilities):
+    homeability=expabilities[fixture["home_team"]]*HomeAwayBias
+    awayability=expabilities[fixture["away_team"]]/HomeAwayBias
     ratio=homeability/float(homeability+awayability)
-    drawprob=factors["draw_max"]-factors["draw_curvature"]*(ratio-0.5)**2
+    drawprob=DrawMax-DrawCurvature*(ratio-0.5)**2
     return [ratio*(1-drawprob),
             (1-ratio)*(1-drawprob),
             drawprob]
 
-def calc_league_table(teams, results):
-    table=dict([(team["name"], 
-                 {"name": team["name"],
-                  "points": 0,
-                  "gd": 0,
-                  "played": 0})
-                for team in teams])
-    for result in results:
-        if result["home_goals"] > result["away_goals"]:
-            table[result["home_team"]]["points"]+=3
-            gd=result["home_goals"]-result["away_goals"]
-            table[result["home_team"]]["gd"]+=gd
-            table[result["away_team"]]["gd"]-=gd
-        elif result["home_goals"] < result["away_goals"]:
-            table[result["away_team"]]["points"]+=3
-            gd=result["away_goals"]-result["home_goals"]
-            table[result["away_team"]]["gd"]+=gd
-            table[result["home_team"]]["gd"]-=gd
-        else:
-            table[result["home_team"]]["points"]+=1
-            table[result["away_team"]]["points"]+=1
-        table[result["home_team"]]["played"]+=1
-        table[result["away_team"]]["played"]+=1
-    return table.values()
-
-def solve(params, request, facnames, errfn, facdefaults=DefaultFactors, debug=True):
+def solve(params, request, errfn, debug=True):
     teams=request["teams"]
     abilities=dict([(team["name"], random.gauss(0, 1))
                     for team in teams])
-    factors=dict([(key, value["base"])
-                  for key, value in facdefaults.items()])
-    sigmas=dict([(key, value["sigma"])
-                 for key, value in facdefaults.items()])
-    best=errfn(request, abilities, factors)
-    facratio, faccount = len(teams)/len(facnames), 0 # NB
+    best=errfn(request, abilities)
     n=params["generations"]
     for i in range(n):
         decay=((n-i)/float(n))**params["decay"]
@@ -66,39 +27,28 @@ def solve(params, request, facnames, errfn, facdefaults=DefaultFactors, debug=Tr
         # team
         teamname=teams[i%len(teams)]["name"]
         teamdelta=random.gauss(0, 1)*decay
-        # factor
-        facname=facnames[faccount%len(facnames)]
-        if 0==i%facratio:
-            facdelta=random.gauss(0, 1)*sigmas[facname]
-            faccount+=1
-        else:
-            facdelta=0
         # up
         abilities[teamname]+=teamdelta
-        factors[facname]+=facdelta
-        err=errfn(request, abilities, factors)
+        err=errfn(request, abilities)
         if err < best:
             best=err
             continue
         # down
         abilities[teamname]-=2*teamdelta
-        factors[facname]-=2*facdelta
-        err=errfn(request, abilities, factors)
+        err=errfn(request, abilities)
         if err < best:
             best=err 
             continue
         # reset
         abilities[teamname]+=teamdelta
-        factors[facname]+=facdelta
-    return (abilities, factors, best)
+    return (abilities, best)
 
-def calc_error(request, abilities, factors):
+def calc_error(request, abilities):
     expabilities=dict([(key, math.exp(value))
                        for key, value in abilities.items()])
     errors=[sum([(x-y)**2 
                  for x, y in zip(simulate_match(fixture, 
-                                                expabilities, 
-                                                factors),
+                                                expabilities), 
                                  fixture["probabilities"])])/float(3)
             for fixture in request["trainingset"]]
     return (sum(errors)/float(len(request["trainingset"])))**0.5
@@ -119,13 +69,16 @@ if __name__=="__main__":
                              for fixture in struct["TrainingFixtures"]]}
     params={"generations": 1000,
             "decay": 2}
-    abilities, factors, err = solve(params, 
-                                    request,
-                                    DefaultFactors.keys(),
-                                    calc_error)
+    abilities, err = solve(params, request, calc_error)
+    def format_name(text, n=16):
+        if len(text) < n:
+            return text+" ".join(["" for i in range(n-len(text))])
+        else:
+            return text[:n]
+    print
     for key, value in sorted([(key, value) 
                               for key, value in abilities.items()],
                              key=lambda x: -x[-1]):
-        print key, value
+        print "%s %.5f" % (format_name(key), value)
         
 
