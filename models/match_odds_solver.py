@@ -1,3 +1,7 @@
+import numpy as np
+
+from scipy import optimize
+
 import math, random
 
 HomeAwayBias=1.3
@@ -13,39 +17,34 @@ def simulate_match(fixture, expabilities):
             (1-ratio)*(1-drawprob),
             drawprob]
 
-def calc_error(trainingset, abilities):
-    expabilities=dict([(key, math.exp(value))
-                       for key, value in abilities.items()])
+def calc_error(avals, teamnames, trainingset):
+    expabilities=dict([(name, math.exp(aval))
+                       for name, aval in zip(teamnames, avals)])
     errors=[sum([(x-y)**2 
-                 for x, y in zip(simulate_match(fixture, 
-                                                expabilities), 
+                 for x, y in zip(simulate_match(fixture=fixture,
+                                                expabilities=expabilities), 
                                  fixture["probabilities"])])/float(3)
             for fixture in trainingset]
     return (sum(errors)/float(len(trainingset)))**0.5
 
-def solve_inefficiently(teams, trainingset, generations=1000, decay=2):
-    abilities=dict([(team["name"], random.gauss(0, 1))
-                    for team in teams])
-    best=calc_error(trainingset, abilities)
-    for i in range(generations):
-        factor=((generations-i)/float(generations))**decay
-        teamname=teams[i%len(teams)]["name"]
-        teamdelta=random.gauss(0, 1)*factor
-        abilities[teamname]+=teamdelta
-        # up
-        err=calc_error(trainingset, abilities)
-        if err < best:
-            best=err
-            continue
-        # down
-        abilities[teamname]-=2*teamdelta
-        err=calc_error(trainingset, abilities)
-        if err < best:
-            best=err 
-            continue
-        # reset
-        abilities[teamname]+=teamdelta
-    return (abilities, best)
+"""
+how do you supress warnings ?
+is maxiter working correctly ?
+should you bring err function inline ?
+how about calculating the ratings as output ?
+try optimising draw parameters as well ?
+"""
+
+def solve_scipy(teams, trainingset, guess=50):
+    teamnames=sorted([team["name"] for team in teams])
+    guesses=tuple([guess for i in range(len(teams))])
+    resp=optimize.fmin(calc_error, guesses,
+                       args=(teamnames, trainingset),
+                       full_output=1)
+    best, err, n, funcalls, warnflag = resp
+    abilities=dict([(name, aval)
+                    for name, aval in zip(teamnames, list(best))])
+    return (abilities, n, err)
 
 import json
 
@@ -59,8 +58,8 @@ if __name__=="__main__":
                   "home_team": fixture["HomeTeam"],
                   "away_team": fixture["AwayTeam"],
                   "probabilities": fixture["Probabilities"]}
-                 for fixture in SampleRequest["TrainingFixtures"]]
-    abilities, err = solve_inefficiently(teams, trainingset)
+                 for fixture in SampleRequest["TrainingFixtures"]]    
+    abilities, n, err = solve_scipy(teams, trainingset)
     def format_name(text, n=16):
         if len(text) < n:
             return text+" ".join(["" for i in range(n-len(text))])
@@ -68,9 +67,8 @@ if __name__=="__main__":
             return text[:n]
     print
     for key, value in sorted([(key, value) 
-                              for key, value in abilities.items()],
-                             key=lambda x: -x[-1]):
+                              for key, value in abilities.items()],                             key=lambda x: -x[-1]):
         print "%s %.5f" % (format_name(key), value)
-    print
+    print 
+    print "Iterations: %i" % n
     print "Error: %.5f" % err
-
