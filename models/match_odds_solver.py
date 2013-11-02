@@ -8,9 +8,9 @@ HomeAwayBias=1.3
 DrawMax=0.3
 DrawCurvature=0.7
 
-def simulate_match(fixture, expabilities):
-    homeability=expabilities[fixture["home_team"]]*HomeAwayBias
-    awayability=expabilities[fixture["away_team"]]/HomeAwayBias
+def simulate_match(fixture, abilities):
+    homeability=abilities[fixture["home_team"]]*HomeAwayBias
+    awayability=abilities[fixture["away_team"]]/HomeAwayBias
     ratio=homeability/float(homeability+awayability)
     drawprob=DrawMax-DrawCurvature*(ratio-0.5)**2
     return [ratio*(1-drawprob),
@@ -18,11 +18,11 @@ def simulate_match(fixture, expabilities):
             drawprob]
 
 def calc_error(avals, teamnames, trainingset):
-    expabilities=dict([(name, math.exp(aval))
-                       for name, aval in zip(teamnames, avals)])
+    abilities=dict([(name, aval)
+                    for name, aval in zip(teamnames, avals)])
     errors=[sum([(x-y)**2 
                  for x, y in zip(simulate_match(fixture=fixture,
-                                                expabilities=expabilities), 
+                                                abilities=abilities), 
                                  fixture["probabilities"])])/float(3)
             for fixture in trainingset]
     return (sum(errors)/float(len(trainingset)))**0.5
@@ -35,7 +35,7 @@ how about calculating the ratings as output ?
 try optimising draw parameters as well ?
 """
 
-def solve_scipy(teams, trainingset, guess=50):
+def solve_scipy(teams, trainingset, guess=10):
     teamnames=sorted([team["name"] for team in teams])
     guesses=tuple([guess for i in range(len(teams))])
     resp=optimize.fmin(calc_error, guesses,
