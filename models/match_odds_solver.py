@@ -13,7 +13,7 @@ def simulate_match(fixture, expabilities):
             (1-ratio)*(1-drawprob),
             drawprob]
 
-def solve(params, request, errfn, debug=True):
+def solve(params, request, errfn):
     teams=request["teams"]
     abilities=dict([(team["name"], random.gauss(0, 1))
                     for team in teams])
@@ -21,14 +21,10 @@ def solve(params, request, errfn, debug=True):
     n=params["generations"]
     for i in range(n):
         decay=((n-i)/float(n))**params["decay"]
-        if (debug and 
-            0==i%100):
-            print "%i\t%.5f\t%.5f" % (i, decay, best)
-        # team
         teamname=teams[i%len(teams)]["name"]
         teamdelta=random.gauss(0, 1)*decay
-        # up
         abilities[teamname]+=teamdelta
+        # up
         err=errfn(request, abilities)
         if err < best:
             best=err
@@ -80,5 +76,6 @@ if __name__=="__main__":
                               for key, value in abilities.items()],
                              key=lambda x: -x[-1]):
         print "%s %.5f" % (format_name(key), value)
-        
+    print
+    print "Error: %.5f" % err
 
