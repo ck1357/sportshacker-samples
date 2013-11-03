@@ -4,23 +4,26 @@ HomeAwayBias=1.3
 DrawMax=0.3
 DrawCurvature=0.75
 
-def simulate_match(fixture, expabilities):
-    homeability=expabilities[fixture["home_team"]]*HomeAwayBias
-    awayability=expabilities[fixture["away_team"]]/HomeAwayBias
+def simulate_1x2_probabilities(fixture, abilities):
+    homeability=abilities[fixture["home_team"]]*HomeAwayBias
+    awayability=abilities[fixture["away_team"]]/HomeAwayBias
     ratio=homeability/float(homeability+awayability)
     drawprob=DrawMax-DrawCurvature*(ratio-0.5)**2
     return [ratio*(1-drawprob),
             (1-ratio)*(1-drawprob),
             drawprob]
 
-def calc_error(trainingset, abilities):
+def calc_1x2_error(trainingset, abilities):
     expabilities=dict([(key, math.exp(value))
                        for key, value in abilities.items()])
-    errors=[sum([(x-y)**2 
-                 for x, y in zip(simulate_match(fixture, 
-                                                expabilities), 
-                                 fixture["probabilities"])])/float(3)
-            for fixture in trainingset]
+    probabilities=[simulate_1x2_probabilities(fixture=fixture, 
+                                              abilities=expabilities)
+                      for fixture in trainingset]
+    def calc_error(X, Y):
+        return sum([(x-y)**2 for x, y in zip(X, Y)])/float(len(X))
+    errors=[calc_error(prob, fixture["probabilities"])
+            for prob, fixture in zip(probabilities,
+                                     trainingset)]
     return (sum(errors)/float(len(trainingset)))**0.5
 
 """
@@ -30,26 +33,33 @@ this solver is probably very inefficient; however it does have the merits of kee
 def solve_inefficiently(teams, trainingset, generations=1000, decay=2):
     abilities=dict([(team["name"], random.gauss(0, 1))
                     for team in teams])
-    best=calc_error(trainingset, abilities)
+    best=calc_1x2_error(trainingset=trainingset, 
+                    abilities=abilities)
     for i in range(generations):
-        factor=((generations-i)/float(generations))**decay
+        decayfac=((generations-i)/float(generations))**decay
         teamname=teams[i%len(teams)]["name"]
-        delta=random.gauss(0, 1)*factor
+        delta=random.gauss(0, 1)*decayfac
         abilities[teamname]+=delta
         # up
-        err=calc_error(trainingset, abilities)
+        err=calc_1x2_error(trainingset=trainingset, 
+                           abilities=abilities)
         if err < best:
             best=err
             continue
         # down
-        abilities[teamname]-=2*delta
-        err=calc_error(trainingset, abilities)
+        abilities[teamname]-=2*delta # NB -=2*
+        err=calc_1x2_error(trainingset=trainingset, 
+                           abilities=abilities)
         if err < best:
             best=err 
             continue
         # reset
         abilities[teamname]+=delta
     return (abilities, best)
+
+"""
+replace with data loaded from football_data
+"""
 
 import json
 
