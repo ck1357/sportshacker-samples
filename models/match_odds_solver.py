@@ -96,7 +96,7 @@ if __name__=="__main__":
     n=6*len(teams)/2 # last 6 weeks
     trainingset=results[:n]
     print "Solving"
-    abilities, err = solve_inefficiently(teams, trainingset)
+    abilities, _ = solve_inefficiently(teams, trainingset)
     ratings=calc_ratings(teams, abilities)
     def format_name(text, n=16):
         if len(text) < n:
@@ -108,6 +108,4 @@ if __name__=="__main__":
                               for key, value in ratings.items()],
                              key=lambda x: -x[-1]):
         print "%s %.5f" % (format_name(key), value)
-    print
-    print "Error: %.5f" % err
 
