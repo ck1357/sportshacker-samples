@@ -1,3 +1,7 @@
+"""
+NB individual team errors are unlikely to converge on zero as H/A bias, draw parameters aren't optimised
+"""
+
 import math, random
 
 HomeAwayBias=1.3
