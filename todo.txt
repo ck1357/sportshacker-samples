@@ -1,3 +1,6 @@
 < short >
 
-test using scipy solver on match odds ratings
+calculate ratings
+replace fixtures with football-data parser
+dixon- coles model
+
