@@ -2,40 +2,10 @@
 http://people.maths.ox.ac.uk/siamstudentchapter/webpages/2011_Conference/Robert_Talk.pdf
 """
 
-"""
-NB assumes correlation of -1 between attack, defence ratings
-attack = math.abs(gauss)
-defence = math.abs(-gauss)
-ie that a good attacking team will be equivalently parsimonious in defence
-of course this is not always true - eg Barcelona
-abilities are not normalised because of this 'self- normalising' attack/defence relationship
-"""
+import math, random
 
-import json, math, random, yaml
-
-SolverParams=yaml.load("""
-seed: 13
-generations: 1000
-decay: 2.0
-""")
-
-class Abilities(dict):
-
-    def initialise(self, teams):
-        for team in teams:
-            self[team["name"]]=random.gauss(0, 1)
-
-    def copy(self):
-        a=Abilities()
-        for key, value in self.items():
-            a[key]=value
-        return a
-
-    def normalise(self):
-        mean=sum(self.values())/float(len(self))
-        for key, value in self.items():
-            self[key]=self[key]-mean
-        return self
+BaseGoals=1.1
+HomeAwayBias=1.3
 
 def poisson(m, n):
     p=math.exp(-m)
@@ -45,8 +15,14 @@ def poisson(m, n):
         r.append(p)
     return r
 
-BaseGoals=1.1
-HomeAwayBias=1.3
+"""
+two factor (attack, defence) model collapsed into one factor by using math.exp(ability) for attack, math.exp(-ability) for defence
+so a team with a high attack factor will have a low defence factor by definition; this might not always be true empirically (eg Barcelona ?), but much easier to keep control of a one- factor model rather than a two- factor
+"""
+
+"""
+should maybe calculate full outer- product, to simplify ratings calculation 
+"""
 
 def simulate_match(match, abilities):
     a0, a1, d0, d1 = (math.exp(abilities[match["home_team"]]),
@@ -57,38 +33,52 @@ def simulate_match(match, abilities):
               poisson(BaseGoals*a1*d0/HomeAwayBias, 1+match["score"][1]))
     return v0[-1]*v1[-1]
 
-def solve(params, teams, results):
-    random.seed(params["seed"])
-    def simulate(abilities, key, delta):
-        ab2=abilities.copy()
-        ab2[teamname]+=delta
-        # ab2.normalise()
-        lval=sum([simulate_match(match, ab2)
-                for match in results])
-        return (ab2, lval)
-    abilities=Abilities()
-    abilities.initialise(teams)
-    # abilities.normalise()
-    best=sum([simulate_match(match, abilities)
-              for match in results])
-    for i in range(params["generations"]):
+def simulate_matches(results, abilities):
+    return sum([simulate_match(match, abilities)
+               for match in results])
+
+"""
+this solver is probably very inefficient; however it has the merit of keeping abilities within sensible bounds, something which you may have no control over with other optimisation methods (eg scipy.optimize.fmin)
+"""
+
+def solve_inefficiently(teams, results, generations=5000, decay=2):
+    abilities=dict([(team["name"], random.gauss(0, 1))
+                    for team in teams])
+    best=simulate_matches(results=results, 
+                          abilities=abilities)
+    for i in range(generations):
         if 0==i%100:
             print (i, best)
-        j=i%len(teams)
-        teamname=teams[j]["name"]
-        factor=((params["generations"]-i)/float(params["generations"]))**params["decay"]
-        delta=random.gauss(0, 1)*factor
+        decayfac=((generations-i)/float(generations))**decay
+        teamname=teams[i%len(teams)]["name"]
+        delta=random.gauss(0, 1)*decayfac
+        abilities[teamname]+=delta
         # up
-        ab2, lval = simulate(abilities, teamname, delta)
-        if lval > best:
-            abilities, best = ab2, lval
+        resp=simulate_matches(results=results, 
+                              abilities=abilities)
+        if resp > best:
+            best=resp
             continue
         # down
-        ab2, lval = simulate(abilities, teamname, -delta)
-        if lval > best:
-            abilities, best = ab2, lval
+        abilities[teamname]-=2*delta # NB -=2*
+        resp=simulate_matches(results=results, 
+                              abilities=abilities)
+        if resp > best:
+            best=resp 
             continue
+        # reset
+        abilities[teamname]+=delta
     return (abilities, best)
+
+"""
+iterate across all 380 matches [ENG.0]
+for each match, calculate correct score matrix
+then calculate match odds from correct score grid; and calculate expected points given correct score grid
+"""
+
+def calc_ratings(teams, abilities):
+    pass
+
 
 if __name__=="__main__":
     from feeds.football_data import get_results
@@ -102,10 +92,15 @@ if __name__=="__main__":
         return [{"name": name}
                 for name in sorted(names)]
     teams=filter_teams(results)
-    results=sorted(results, key=lambda x: x["date"])
-    abilities, _ = solve(SolverParams, teams, results)
-    abilities=[(key, value) for key, value in abilities.items()]
-    for item in sorted(abilities, key=lambda x:-x[1]):
-        print item
+    print "Solving"
+    abilities, _ = solve_inefficiently(teams, results)
+    def format_name(text, n=16):
+        if len(text) < n:
+            return text+" ".join(["" for i in range(n-len(text))])
+        else:
+            return text[:n]
     print
-    print sum([item[-1] for item in abilities])
+    for key, value in sorted([(key, value) 
+                              for key, value in abilities.items()],
+                             key=lambda x: -x[-1]):
+        print "%s %.5f" % (format_name(key), value)

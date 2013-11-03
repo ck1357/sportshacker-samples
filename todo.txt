@@ -1,4 +1,4 @@
 < short >
 
-dixon- coles model
+complete dixon coles rating calculation
 
