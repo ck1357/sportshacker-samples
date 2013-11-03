@@ -4,6 +4,8 @@ http://people.maths.ox.ac.uk/siamstudentchapter/webpages/2011_Conference/Robert_
 
 import math, random
 
+import numpy as np
+
 BaseGoals=1.1
 HomeAwayBias=1.3
 
@@ -20,32 +22,34 @@ two factor (attack, defence) model collapsed into one factor by using math.exp(a
 so a team with a high attack factor will have a low defence factor by definition; this might not always be true empirically (eg Barcelona ?), but much easier to keep control of a one- factor model rather than a two- factor
 """
 
-"""
-should maybe calculate full outer- product, to simplify ratings calculation 
-"""
-
-def simulate_match(match, abilities):
+def generate_poisson_means(match, abilities):
     a0, a1, d0, d1 = (math.exp(abilities[match["home_team"]]),
                       math.exp(abilities[match["away_team"]]),
                       math.exp(-abilities[match["home_team"]]),
                       math.exp(-abilities[match["away_team"]]))
-    v0, v1 = (poisson(BaseGoals*a0*d1*HomeAwayBias, 1+match["score"][0]),
-              poisson(BaseGoals*a1*d0/HomeAwayBias, 1+match["score"][1]))
-    return v0[-1]*v1[-1]
+    m0, m1 = (BaseGoals*a0*d1*HomeAwayBias,
+              BaseGoals*a1*d0/HomeAwayBias)
+    return (m0, m1)
 
-def simulate_matches(results, abilities):
-    return sum([simulate_match(match, abilities)
-               for match in results])
+def calc_max_likelihood(results, abilities):
+    total=0
+    for match in results:
+        m0, m1 = generate_poisson_means(match, abilities)
+        hg, ag = match["score"]
+        v0, v1 = (poisson(m0, hg+1),
+                  poisson(m1, ag+1))
+        total+=v0[hg]*v1[ag]
+    return total
 
 """
 this solver is probably very inefficient; however it has the merit of keeping abilities within sensible bounds, something which you may have no control over with other optimisation methods (eg scipy.optimize.fmin)
 """
 
-def solve_inefficiently(teams, results, generations=5000, decay=2):
+def solve_inefficiently(teams, results, generations=1000, decay=2):
     abilities=dict([(team["name"], random.gauss(0, 1))
                     for team in teams])
-    best=simulate_matches(results=results, 
-                          abilities=abilities)
+    best=calc_max_likelihood(results=results, 
+                             abilities=abilities)
     for i in range(generations):
         if 0==i%100:
             print (i, best)
@@ -54,15 +58,15 @@ def solve_inefficiently(teams, results, generations=5000, decay=2):
         delta=random.gauss(0, 1)*decayfac
         abilities[teamname]+=delta
         # up
-        resp=simulate_matches(results=results, 
-                              abilities=abilities)
+        resp=calc_max_likelihood(results=results, 
+                                 abilities=abilities)
         if resp > best:
             best=resp
             continue
         # down
         abilities[teamname]-=2*delta # NB -=2*
-        resp=simulate_matches(results=results, 
-                              abilities=abilities)
+        resp=calc_max_likelihood(results=results, 
+                                 abilities=abilities)
         if resp > best:
             best=resp 
             continue
