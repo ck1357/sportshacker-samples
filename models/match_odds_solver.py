@@ -5,19 +5,19 @@ DrawMax=0.3
 DrawCurvature=0.75
 
 def simulate_1x2_probabilities(fixture, abilities):
-    homeability=abilities[fixture["home_team"]]*HomeAwayBias
-    awayability=abilities[fixture["away_team"]]/HomeAwayBias
+    homeability=math.exp(abilities[fixture["home_team"]])
+    awayability=math.exp(abilities[fixture["away_team"]])
+    homeability*=HomeAwayBias
+    awayability/=HomeAwayBias
     ratio=homeability/float(homeability+awayability)
     drawprob=DrawMax-DrawCurvature*(ratio-0.5)**2
     return [ratio*(1-drawprob),
             (1-ratio)*(1-drawprob),
             drawprob]
 
-def calc_1x2_error(trainingset, abilities):
-    expabilities=dict([(key, math.exp(value))
-                       for key, value in abilities.items()])
+def calc_1x2_error(abilities, trainingset):
     probabilities=[simulate_1x2_probabilities(fixture=fixture, 
-                                              abilities=expabilities)
+                                              abilities=abilities)
                       for fixture in trainingset]
     def calc_error(X, Y):
         return sum([(x-y)**2 for x, y in zip(X, Y)])/float(len(X))
