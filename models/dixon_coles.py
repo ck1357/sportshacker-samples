@@ -91,7 +91,7 @@ def solve(params, teams, results):
     return (abilities, best)
 
 if __name__=="__main__":
-    results=json.loads(file("english_premiership_results.json").read())
+    results=json.loads(file("fixtures/english_premiership_results.json").read())
     teams={}
     for result in results:
         for attr in ["home_team", "away_team"]:
