@@ -46,15 +46,15 @@ def poisson(m, n):
     return r
 
 BaseGoals=1.1
-HomeAwayBias=1.33
+HomeAwayBias=1.3
 
 def simulate_match(match, abilities):
     a0, a1, d0, d1 = (math.exp(abilities[match["home_team"]]),
                       math.exp(abilities[match["away_team"]]),
                       math.exp(-abilities[match["home_team"]]),
                       math.exp(-abilities[match["away_team"]]))
-    v0, v1 = (poisson(BaseGoals*HomeAwayBias*a0*d1, match["home_goals"]),
-              poisson(BaseGoals*a1*d0, match["away_goals"]))
+    v0, v1 = (poisson(BaseGoals*a0*d1*HomeAwayBias, 1+match["score"][0]),
+              poisson(BaseGoals*a1*d0/HomeAwayBias, 1+match["score"][1]))
     return v0[-1]*v1[-1]
 
 def solve(params, teams, results):
@@ -91,13 +91,18 @@ def solve(params, teams, results):
     return (abilities, best)
 
 if __name__=="__main__":
-    results=json.loads(file("fixtures/english_premiership_results.json").read())
-    teams={}
-    for result in results:
-        for attr in ["home_team", "away_team"]:
-            teams.setdefault(result[attr], None)
-    teams=[{"name": teamname}
-           for teamname in sorted(teams.keys())]
+    from feeds.football_data import get_results
+    results=get_results("http://www.football-data.co.uk/mmz4281/1213/E0.csv")
+    def filter_teams(results):
+        names=[]
+        for result in results:
+            for attr in ["home_team", "away_team"]:
+                if result[attr] not in names:
+                    names.append(result[attr])
+        return [{"name": name}
+                for name in sorted(names)]
+    teams=filter_teams(results)
+    results=sorted(results, key=lambda x: x["date"])
     abilities, _ = solve(SolverParams, teams, results)
     abilities=[(key, value) for key, value in abilities.items()]
     for item in sorted(abilities, key=lambda x:-x[1]):

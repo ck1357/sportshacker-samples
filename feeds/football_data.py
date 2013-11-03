@@ -57,8 +57,8 @@ def get_results(url):
     results=[{"date": parse_date(item["Date"]),
               "home_team": item["HomeTeam"],
               "away_team": item["AwayTeam"],
-              "score": (item["FTHG"],
-                        item["FTAG"]),
+              "score": (int(item["FTHG"]),
+                        int(item["FTAG"])),
               "probabilities": aggregate_probabilities(item)}
              for item in items
              if (item["FTHG"] not in [None, ""] and
