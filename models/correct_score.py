@@ -1,8 +1,6 @@
 import math
 
-"""
-replace with numpy poisson
-"""
+import numpy as np
 
 def poisson(m, n):
     p=math.exp(-m)
@@ -13,7 +11,6 @@ def poisson(m, n):
     return r
 
 def simulate_correct_score(mx, my, n):
-    import numpy as np
     return np.outer(poisson(mx, n),
                     poisson(my, n))
 
@@ -64,7 +61,6 @@ class Grid(list):
         return self.sum(filterfn)
 
 def solve_match_odds(prob, n):
-    import numpy as np
     def errfn(m, target, n):
         grid=Grid(simulate_correct_score(mx=m[0], my=m[1], n=n))
         return np.sum(np.subtract(grid.match_odds, target)**2)

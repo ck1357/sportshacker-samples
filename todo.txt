@@ -1,7 +1,6 @@
 < short >
 
-use numpy poisson
-calc errors
+calc match odds solver errors
 replace fixtures with football-data parser
 dixon- coles model
 

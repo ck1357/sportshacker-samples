@@ -19,12 +19,13 @@ def calc_1x2_error(abilities, trainingset):
     probabilities=[simulate_1x2_probabilities(fixture=fixture, 
                                               abilities=abilities)
                       for fixture in trainingset]
-    def calc_error(X, Y):
-        return sum([(x-y)**2 for x, y in zip(X, Y)])/float(len(X))
-    errors=[calc_error(prob, fixture["probabilities"])
+    def rms_error(X, Y):
+        return (sum([(x-y)**2 
+                     for x, y in zip(X, Y)])/float(len(X)))**0.5
+    errors=[rms_error(prob, fixture["probabilities"])
             for prob, fixture in zip(probabilities,
                                      trainingset)]
-    return (sum(errors)/float(len(trainingset)))**0.5
+    return sum(errors)/float(len(trainingset))
 
 """
 this solver is probably very inefficient; however it does have the merits of keeping the abilities in sensible bounds
