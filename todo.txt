@@ -1,6 +1,7 @@
 < short >
 
-calculate ratings
+use numpy poisson
+calc errors
 replace fixtures with football-data parser
 dixon- coles model
 

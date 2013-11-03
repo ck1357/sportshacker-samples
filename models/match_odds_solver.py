@@ -57,6 +57,22 @@ def solve_inefficiently(teams, trainingset, generations=1000, decay=2):
         abilities[teamname]+=delta
     return (abilities, best)
 
+def calc_ratings(teams, abilities):
+    ratings=dict([(team["name"], 0)
+                  for team in teams])
+    denom=1/float(2*(len(teams)-1))
+    for hometeam in teams:
+        for awayteam in teams:
+            if hometeam["name"]==awayteam["name"]:
+                continue
+            fixture={"home_team": hometeam["name"],
+                     "away_team": awayteam["name"]}
+            p=simulate_1x2_probabilities(fixture=fixture,
+                                         abilities=abilities)
+            ratings[hometeam["name"]]+=(3*p[0]+p[-1])*denom
+            ratings[awayteam["name"]]+=(3*p[1]+p[-1])*denom
+    return ratings
+
 """
 replace with data loaded from football_data
 """
@@ -74,6 +90,7 @@ if __name__=="__main__":
                   "probabilities": fixture["Probabilities"]}
                  for fixture in SampleRequest["TrainingFixtures"]]
     abilities, err = solve_inefficiently(teams, trainingset)
+    ratings=calc_ratings(teams, abilities)
     def format_name(text, n=16):
         if len(text) < n:
             return text+" ".join(["" for i in range(n-len(text))])
@@ -81,7 +98,7 @@ if __name__=="__main__":
             return text[:n]
     print
     for key, value in sorted([(key, value) 
-                              for key, value in abilities.items()],
+                              for key, value in ratings.items()],
                              key=lambda x: -x[-1]):
         print "%s %.5f" % (format_name(key), value)
     print
