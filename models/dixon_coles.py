@@ -80,9 +80,53 @@ for each match, calculate correct score matrix
 then calculate match odds from correct score grid; and calculate expected points given correct score grid
 """
 
-def calc_ratings(teams, abilities):
-    pass
+class Grid(list):
 
+    def __init__(self, data):
+        list.__init__(self, data)
+
+    def sum(self, filterfn):
+        return sum([self[i][j]                    
+                    for i in range(len(self))
+                    for j in range(len(self))
+                    if filterfn(i, j)])
+                    
+    @property
+    def home_win(self):
+        return self.sum(lambda i, j: i > j)
+
+    @property
+    def away_win(self):
+        return self.sum(lambda i, j: i < j)
+
+    @property
+    def draw(self):
+        return self.sum(lambda i, j: i==j)
+
+    @property
+    def match_odds(self):
+        return [self.home_win,
+                self.away_win,
+                self.draw]
+
+def calc_ratings(teams, abilities, n=10):
+    ratings=dict([(team["name"], 0)
+                  for team in teams])
+    denom=1/float(2*(len(teams)-1))
+    for hometeam in teams:
+        for awayteam in teams:
+            if hometeam["name"]==awayteam["name"]:
+                continue
+            fixture={"home_team": hometeam["name"],
+                     "away_team": awayteam["name"]}
+            m0, m1 = generate_poisson_means(fixture, abilities)
+            v0, v1 = (poisson(m0, n),
+                      poisson(m1, n))
+            grid=Grid(np.outer(v0, v1))
+            p=grid.match_odds
+            ratings[hometeam["name"]]+=(3*p[0]+p[-1])*denom
+            ratings[awayteam["name"]]+=(3*p[1]+p[-1])*denom
+    return ratings
 
 if __name__=="__main__":
     from feeds.football_data import get_results
@@ -98,6 +142,7 @@ if __name__=="__main__":
     teams=filter_teams(results)
     print "Solving"
     abilities, _ = solve_inefficiently(teams, results)
+    ratings=calc_ratings(teams, abilities)
     def format_name(text, n=16):
         if len(text) < n:
             return text+" ".join(["" for i in range(n-len(text))])
@@ -105,6 +150,6 @@ if __name__=="__main__":
             return text[:n]
     print
     for key, value in sorted([(key, value) 
-                              for key, value in abilities.items()],
+                              for key, value in ratings.items()],
                              key=lambda x: -x[-1]):
         print "%s %.5f" % (format_name(key), value)

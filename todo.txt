@@ -1,4 +1,2 @@
 < short >
 
-complete dixon coles rating calculation
-
