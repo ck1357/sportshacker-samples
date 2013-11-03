@@ -1,5 +1,9 @@
 import math
 
+"""
+replace with numpy poisson
+"""
+
 def poisson(m, n):
     p=math.exp(-m)
     r=[p]
