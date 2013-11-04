@@ -2,6 +2,10 @@
 NB individual team errors are unlikely to converge on zero as H/A bias, draw parameters aren't optimised
 """
 
+"""
+NB should borrow from dixon-coles and solve for correct score grid rather than match odds; do you thereby removed the need for draw parameterisation ?
+"""
+
 import math, random
 
 HomeAwayBias=1.3

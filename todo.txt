@@ -1,2 +1,3 @@
 < short >
 
+refactor match odds solver to solve for correct score
