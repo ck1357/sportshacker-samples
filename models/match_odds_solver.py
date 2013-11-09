@@ -23,26 +23,26 @@ def simulate_1x2_probabilities(fixture, abilities):
             (1-ratio)*(1-drawprob),
             drawprob]
 
-def calc_1x2_error(abilities, trainingset):
+def calc_1x2_error(abilities, fixtures):
     probabilities=[simulate_1x2_probabilities(fixture=fixture, 
                                               abilities=abilities)
-                      for fixture in trainingset]
+                      for fixture in fixtures]
     def calc_error(X, Y):
         return (sum([(x-y)**2 
                      for x, y in zip(X, Y)])/float(len(X)))**0.5
     errors=[calc_error(prob, fixture["probabilities"])
             for prob, fixture in zip(probabilities,
-                                     trainingset)]
-    return sum(errors)/float(len(trainingset))
+                                     fixtures)]
+    return sum(errors)/float(len(fixtures))
 
 """
 this solver is probably very inefficient; however it has the merit of keeping abilities within sensible bounds, something which you may have no control over with other optimisation methods (eg scipy.optimize.fmin)
 """
 
-def solve_inefficiently(teams, trainingset, generations=1000, decay=2):
+def solve_inefficiently(teams, fixtures, generations=1000, decay=2):
     abilities=dict([(team["name"], random.gauss(0, 1))
                     for team in teams])
-    best=calc_1x2_error(trainingset=trainingset, 
+    best=calc_1x2_error(fixtures=fixtures, 
                     abilities=abilities)
     for i in range(generations):
         decayfac=((generations-i)/float(generations))**decay
@@ -50,14 +50,14 @@ def solve_inefficiently(teams, trainingset, generations=1000, decay=2):
         delta=random.gauss(0, 1)*decayfac
         abilities[teamname]+=delta
         # up
-        err=calc_1x2_error(trainingset=trainingset, 
+        err=calc_1x2_error(fixtures=fixtures, 
                            abilities=abilities)
         if err < best:
             best=err
             continue
         # down
         abilities[teamname]-=2*delta # NB -=2*
-        err=calc_1x2_error(trainingset=trainingset, 
+        err=calc_1x2_error(fixtures=fixtures, 
                            abilities=abilities)
         if err < best:
             best=err 
@@ -100,7 +100,8 @@ if __name__=="__main__":
     n=6*len(teams)/2 # last 6 weeks
     trainingset=results[:n]
     print "Solving"
-    abilities, _ = solve_inefficiently(teams, trainingset)
+    abilities, _ = solve_inefficiently(teams=teams, 
+                                       fixtures=trainingset)
     ratings=calc_ratings(teams, abilities)
     def format_name(text, n=16):
         if len(text) < n:
