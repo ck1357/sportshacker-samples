@@ -1,3 +1,5 @@
 < short >
 
-refactor match odds solver to solve for correct score
+models/match_odds_solver.py should use poisson/correct_score grid (see dixon coles); can you avoid need for draw factors and still converge to zero errors ?
+
+betfair sportsbook > arbing betfair

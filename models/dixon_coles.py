@@ -31,7 +31,7 @@ def generate_poisson_means(match, abilities):
               BaseGoals*a1*d0/HomeAwayBias)
     return (m0, m1)
 
-def calc_max_likelihood(results, abilities):
+def calc_likelihood(results, abilities):
     total=0
     for match in results:
         m0, m1 = generate_poisson_means(match, abilities)
@@ -48,8 +48,8 @@ this solver is probably very inefficient; however it has the merit of keeping ab
 def solve_inefficiently(teams, results, generations=1000, decay=2):
     abilities=dict([(team["name"], random.gauss(0, 1))
                     for team in teams])
-    best=calc_max_likelihood(results=results, 
-                             abilities=abilities)
+    best=calc_likelihood(results=results, 
+                         abilities=abilities)
     for i in range(generations):
         if 0==i%100:
             print (i, best)
@@ -58,15 +58,15 @@ def solve_inefficiently(teams, results, generations=1000, decay=2):
         delta=random.gauss(0, 1)*decayfac
         abilities[teamname]+=delta
         # up
-        resp=calc_max_likelihood(results=results, 
-                                 abilities=abilities)
+        resp=calc_likelihood(results=results, 
+                             abilities=abilities)
         if resp > best:
             best=resp
             continue
         # down
         abilities[teamname]-=2*delta # NB -=2*
-        resp=calc_max_likelihood(results=results, 
-                                 abilities=abilities)
+        resp=calc_likelihood(results=results, 
+                             abilities=abilities)
         if resp > best:
             best=resp 
             continue
