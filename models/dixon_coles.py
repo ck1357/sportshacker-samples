@@ -17,6 +17,35 @@ def poisson(m, n):
         r.append(p)
     return r
 
+class Grid(list):
+
+    def __init__(self, data):
+        list.__init__(self, data)
+
+    def sum(self, filterfn):
+        return sum([self[i][j]                    
+                    for i in range(len(self))
+                    for j in range(len(self))
+                    if filterfn(i, j)])
+                    
+    @property
+    def home_win(self):
+        return self.sum(lambda i, j: i > j)
+
+    @property
+    def away_win(self):
+        return self.sum(lambda i, j: i < j)
+
+    @property
+    def draw(self):
+        return self.sum(lambda i, j: i==j)
+
+    @property
+    def match_odds(self):
+        return [self.home_win,
+                self.away_win,
+                self.draw]
+
 """
 two factor (attack, defence) model collapsed into one factor by using math.exp(ability) for attack, math.exp(-ability) for defence
 so a team with a high attack factor will have a low defence factor by definition; this might not always be true empirically (eg Barcelona ?), but much easier to keep control of a one- factor model rather than a two- factor
@@ -73,41 +102,6 @@ def solve_inefficiently(teams, results, generations=1000, decay=2):
         # reset
         abilities[teamname]+=delta
     return (abilities, best)
-
-"""
-iterate across all 380 matches [ENG.0]
-for each match, calculate correct score matrix
-then calculate match odds from correct score grid; and calculate expected points given correct score grid
-"""
-
-class Grid(list):
-
-    def __init__(self, data):
-        list.__init__(self, data)
-
-    def sum(self, filterfn):
-        return sum([self[i][j]                    
-                    for i in range(len(self))
-                    for j in range(len(self))
-                    if filterfn(i, j)])
-                    
-    @property
-    def home_win(self):
-        return self.sum(lambda i, j: i > j)
-
-    @property
-    def away_win(self):
-        return self.sum(lambda i, j: i < j)
-
-    @property
-    def draw(self):
-        return self.sum(lambda i, j: i==j)
-
-    @property
-    def match_odds(self):
-        return [self.home_win,
-                self.away_win,
-                self.draw]
 
 def calc_ratings(teams, abilities, n=10):
     ratings=dict([(team["name"], 0)
