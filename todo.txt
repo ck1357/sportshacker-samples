@@ -1,5 +1,5 @@
 < short >
 
-< thoughts >
+clean up dixon coles dev scripts
 
-why doesn't dixon coles match odds solver work ?
+
