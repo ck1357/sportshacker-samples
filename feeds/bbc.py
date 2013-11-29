@@ -1,4 +1,4 @@
-import lxml.html, json, re, urllib
+import lxml.html, urllib
 
 def get_football_table(url):
     doc=lxml.html.fromstring(urllib.urlopen(url).read())
