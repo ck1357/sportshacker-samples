@@ -1,6 +1,6 @@
 import lxml.html, urllib
 
-def get_football_table(url):
+def get_league_table(url):
     doc=lxml.html.fromstring(urllib.urlopen(url).read())
     teams=[]
     for row in doc.xpath("//table/tbody/tr"):
