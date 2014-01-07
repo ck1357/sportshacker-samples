@@ -31,6 +31,23 @@ def get_prices(url):
     doc=lxml.html.fromstring(urllib.urlopen(url).read())
     table=doc.xpath("//table[@class='eventTable ']")[0]
     rows=table.xpath("tbody/tr")
+    """
+    http://stackoverflow.com/questions/4624062/get-all-text-inside-a-tag-in-lxml
+    """
+    def stringify_children(node):
+        from lxml.etree import tostring
+        from itertools import chain
+        parts = ([node.text] +
+                 list(chain(*([c.text, tostring(c), c.tail] for c in node.getchildren()))) +
+                 [node.tail])
+        return ''.join(filter(None, parts))
+    def clean_text(text):
+        return " ".join([tok for tok in re.split("\\s", text)
+                         if tok!=''])
+    def filter_tail_text(text):
+        tokens=[tok for tok in re.split("\\s", text)
+                if tok!='']
+        return tokens[-1]
     items={}
     for row in rows:
         oddscheckerid=row.attrib["data-participant-id"]
@@ -40,16 +57,18 @@ def get_prices(url):
                 continue
             suffix=td.attrib["id"].split("_")[-1]
             if suffix=="name":
-                name=td.text
+                name=clean_text(td.text)
                 continue
-            if (suffix=="best" or
-                td.text in [None, "SP"] or
-                re.search("^\\d+\\-\\d+$", td.text)):
+            if not re.search("^\\D{2}$", suffix):
+                continue
+            if suffix=="SI":
+                continue
+            if td.text==None:
                 continue
             items.setdefault(name, {"name": name,
                                     "bookmaker": None,
                                     "price": 1e10})
-            price=parse_fractional_quote(td.text)
+            price=parse_fractional_quote(filter_tail_text(stringify_children(td)))
             if price < items[name]["price"]:
                 items[name]["price"]=price
                 items[name]["bookmaker"]=suffix
@@ -57,5 +76,5 @@ def get_prices(url):
                   key=lambda x: -x["price"])
 
 if __name__=="__main__":
-    print get_match_events("http://www.oddschecker.com/football/english/premier-league")
-    # print get_prices("http://www.oddschecker.com/football/english/premier-league/top-3-finish")
+    # print get_match_events("http://www.oddschecker.com/football/english/premier-league")
+    print get_prices("http://www.oddschecker.com/football/english/premier-league/top-3-finish")
