@@ -1,0 +1,32 @@
+application: backtester
+version: 1
+runtime: python27
+api_version: 1
+threadsafe: true
+libraries:
+- name: webapp2
+  version: latest
+- name: lxml
+  version: latest
+skip_files:
+- ^(.*/)?app\.yaml
+- ^(.*/)?app\.yml
+- ^(.*/)?index\.yaml
+- ^(.*/)?index\.yml
+- ^(.*/)?#.*#
+- ^(.*/)?.*~
+- ^(.*/)?.*\.py[co]
+- ^(.*/)?.*/RCS/.*
+- ^(.*/)?\..*
+- appengine.*
+- Rakefile.*
+- notes.txt
+- todo.txt
+- tmp.*
+- README
+handlers:
+- url: /_ah/pipeline(/.*)?
+  script: pipeline_main.app
+- url: /wordcount.*
+  script: controllers.wordcount.app
+
